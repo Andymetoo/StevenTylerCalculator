@@ -35,21 +35,24 @@ public class Calculator : MonoBehaviour
     public void ClickOperation(string val)
     {
         Debug.Log($"ClickOperation val: {val}");
-        SetCurrentInput(); // Ensure the current input is set to either _input or _input2
-
-        if (!string.IsNullOrEmpty(_operation))
+        if (!string.IsNullOrEmpty(_currentInput))
         {
-            // If there's already an operation, calculate the result with the current _input and _input2
-            Calculate();
-            // Set the result as the new _input for the next operation
-            _input = _result;
-            _input2 = 0;
+            SetCurrentInput(); // Parse and store the current input
         }
-        
-        _operation = val;
-        _currentInput = "";
-        //_equalIsPressed = false; // Reset this flag since we're starting a new operation
+
+        if (_input != 0 && !string.IsNullOrEmpty(_operation) && _input2 != 0)
+        {
+            // Perform the pending calculation if there's an ongoing operation
+            Calculate();
+            // Prepare for the next operation
+            _input = _result; // Use the result as the first input for the next operation
+            _input2 = 0; // Reset _input2 for the next input number
+            _currentInput = ""; // Clear current input to accept new number
+        }
+
+        _operation = val; // Set the new operation
     }
+
 
     public void ClickDecimal()
     {
@@ -70,38 +73,52 @@ public class Calculator : MonoBehaviour
 
     public void ClickEqual(string val)
     {
-        Debug.Log($" ClickEqual val: {val}");
-        Calculate();
-        _equalIsPressed = true;
+        Debug.Log($"ClickEqual val: {val}");
+        if (!string.IsNullOrEmpty(_currentInput))
+        {
+            SetCurrentInput(); // Ensure the second number is set
+        }
+
+        Calculate(); // Perform the calculation
+
+        _input = _result; // Ready _input for a new calculation or continuation
+        _input2 = 0; // Reset _input2 for safety
+        _operation = ""; // Clear the operation as calculation is done
+        _currentInput = _result.ToString(); // Optionally, allow chaining operations on the result
+        _equalIsPressed = true; // Reset the flag if you're using it elsewhere
     }
 
     private void Calculate()
     {
-        if (_input != 0 && !string.IsNullOrEmpty(_operation) )
+        switch (_operation)
         {
-            SetCurrentInput();
-            switch (_operation)
-            {
-                case "+":
-                    _result = _input + _input2;
-                    break;
-                case "-":
-                    _result = _input - _input2;
-                    break;
-                case "*":
-                    _result = _input * _input2;
-                    break;
-                case "/":
+            case "+":
+                _result = _input + _input2;
+                break;
+            case "-":
+                _result = _input - _input2;
+                break;
+            case "*":
+                _result = _input * _input2;
+                break;
+            case "/":
+                if (_input2 != 0) // Prevent division by zero
+                {
                     _result = _input / _input2;
-                    break;
-            }
-            
-            // show the result
-            InputText.SetText(_result.ToString());
-            
-            // save the last result for next calculation
-            _input = _result;
+                }
+                else
+                {
+                    Debug.LogError("Division by zero.");
+                    return;
+                }
+                break;
         }
+        // Display the result
+        InputText.SetText(_result.ToString());
+
+        // Prepare for next input or operation
+        _currentInput = "";
+        _input2 = 0; // Reset _input2 in case of consecutive operations without '='
     }
 
     private void SetCurrentInput()
